@@ -1,6 +1,9 @@
 package main
 
-import "database/sql"
+import (
+	"database/sql"
+	"fmt"
+)
 
 type product struct {
 	ID       int     `json:"id"`
@@ -26,4 +29,31 @@ func getProducts(db *sql.DB) ([]product, error) {
 		products = append(products, p)
 	}
 	return products, nil
+}
+
+func (p *product) getProduct(db *sql.DB) error {
+	query := fmt.Sprintf("SELECT name, quantity, price FROM product WHERE id=%v", p.ID)
+	row := db.QueryRow(query)
+	err := row.Scan(&p.Name, &p.Quantity, &p.Price)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *product) createProduct(db *sql.DB) error {
+	query := fmt.Sprintf("insert into product(name,quantity,price) values('%v', '%v', '%v')", p.Name, p.Quantity, p.Price)
+	result, err := db.Exec(query)
+
+	if err != nil {
+		return err
+	}
+
+	id, err := result.LastInsertId()
+
+	if err != nil {
+		return err
+	}
+	p.ID = int(id)
+	return nil
 }
